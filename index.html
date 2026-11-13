@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><meta name="theme-color" content="#071014">
+<title>Panel en vivo — Papel ORB + Escáner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#071014;--card:#0d1a1f;--muted:#12242a;--border:#183238;--fg:#e6f1ef;--mf:#89a4a4;--pri:#67e8f9;--acc:#b7f34b;--red:#ff6b6b;--warn:#fbbf24}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font-family:Manrope,sans-serif;font-size:14px}
+.mono{font-family:"DM Mono",monospace}
+.wrap{max-width:1500px;margin:0 auto;padding:16px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:12px}
+h1{font-size:20px;margin:0;font-weight:800}h1 span{color:var(--pri)}
+h2{font-size:15px;margin:0 0 10px;font-weight:700;color:var(--fg)}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--border);background:var(--muted);color:var(--mf)}
+.b-acc{color:var(--acc);border-color:#3b5a1a}.b-red{color:var(--red);border-color:#5a2222}.b-pri{color:var(--pri);border-color:#1d5560}.b-warn{color:var(--warn);border-color:#5a4a1a}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--mf)}.dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);animation:p 2s infinite}.dot.off{background:var(--red);box-shadow:0 0 8px var(--red)}
+@keyframes p{50%{opacity:.35}}
+.tabs{display:flex;gap:6px;margin:14px 0}.tab{padding:8px 16px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--mf);cursor:pointer;font-weight:700}.tab.on{background:var(--pri);color:#041013;border-color:var(--pri)}
+.ticker{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
+.tq{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 10px}.tq .n{font-size:11px;color:var(--mf);display:flex;justify-content:space-between}.tq .p{font-size:16px;font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+.k{font-size:11px;color:var(--mf);text-transform:uppercase;letter-spacing:.06em}.v{font-size:22px;font-weight:700;margin-top:4px}.s{font-size:12px;color:var(--mf);margin-top:4px}
+.bar{height:7px;background:var(--muted);border-radius:99px;margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+.pos{color:var(--acc)}.neg{color:var(--red)}.mf{color:var(--mf)}
+.sec{margin-top:14px}
+.tw{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:12.5px}th,td{padding:7px 9px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:#0b161a;color:var(--mf);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+td.num{text-align:right;font-family:"DM Mono",monospace}tr:hover td{background:#0f2026}
+.empty{padding:14px;color:var(--mf)}
+.row2{display:grid;grid-template-columns:2fr 1fr;gap:12px}@media(max-width:1000px){.row2{grid-template-columns:1fr}}
+.log{max-height:380px;overflow:auto;font-size:12.5px}.log div{padding:6px 10px;border-bottom:1px solid var(--border)}.log .t{color:var(--mf);font-family:"DM Mono",monospace;margin-right:8px}
+.rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 14px;font-size:13px}.rules div b{color:var(--pri);font-weight:600}
+.note{font-size:12px;color:var(--mf);margin-top:6px;line-height:1.5}
+svg text{fill:var(--mf);font-size:10px;font-family:"DM Mono",monospace}
+.err{background:#2a0f12;border:1px solid #5a2222;color:var(--red);padding:8px 12px;border-radius:10px;margin-top:10px;display:none}
+.tcgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,480px),1fr));gap:12px}
+.tc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px;min-width:0}
+.tch{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;font-size:12.5px;margin-bottom:6px}.tch b{font-size:14px}
+.tcc{height:300px;width:100%;touch-action:pan-y}.tcempty{display:none;height:250px;align-items:center;justify-content:center;color:var(--mf);font-size:13px}@media(max-width:600px){.tcc{height:250px}.wrap{padding:10px}}
+.lg-e{color:#cbd5e1}.lg-s{color:#ff3b3b}.lg-t{color:#22c55e}
+.riesgo{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-top:14px}
+.riesgo.r-rojo{border-color:#5a2222}
+.riesgo.r-ambar{border-color:#5a4a1a}
+.riesgo.r-verde{border-color:#3b5a1a}
+.riesgo-head{display:flex;gap:14px;align-items:center}
+.sema-light{width:52px;height:52px;border-radius:50%;flex:0 0 52px;border:2px solid #0b161a}
+.sema-light.rojo{background:#ff6b6b;box-shadow:0 0 18px #ff6b6b}
+.sema-light.ambar{background:#fbbf24;box-shadow:0 0 18px #fbbf24}
+.sema-light.verde{background:#b7f34b;box-shadow:0 0 18px #b7f34b}
+.riesgo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.riesgo-col{background:var(--muted);border-radius:10px;padding:10px 12px;min-width:0}
+.riesgo-col h3{margin:0 0 8px;font-size:13px;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.riesgo-row{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--border);align-items:baseline}
+.riesgo-row:last-child{border-bottom:0}
+.riesgo-row .lab{color:var(--mf)}
+.riesgo-row .val{font-family:"DM Mono",monospace;text-align:right;font-weight:500}
+.riesgo-det{font-size:11.5px;color:var(--mf);margin-top:6px;line-height:1.45}
+@media(max-width:800px){.riesgo-grid{grid-template-columns:1fr}.riesgo-head{align-items:flex-start}.sema-light{width:44px;height:44px;flex-basis:44px}}
+
+</style></head><body><div class="wrap">
+<header>
+  <div><h1>Panel en vivo · <span>Cuentas ficticias</span></h1><div class="note">Solo papel: no se envía nada a ningún bróker. Horas en Europe/Madrid.</div></div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="badge b-acc">PAPEL</span>
+  <span class="live"><span class="dot" id="dot"></span><span>actualizado <b id="upd" class="mono">—</b> (hora de Madrid) · refresco cada 5 s</span></span></div>
+</header>
+<div class="err" id="err"></div>
+<div class="err" id="integ" style="display:none"></div>
+<div class="note" id="integok" style="display:none"></div>
+<div class="sec" id="tcharts"><h2>📈 Operaciones abiertas · velas 1 min · precios MT5</h2><div class="tcgrid" id="tcgrid"><div class="card empty">Cargando…</div></div><div class="note" id="tcnote"></div></div>
+<div class="ticker" id="ticker"></div>
+<div class="note" id="qnote"></div>
+<div id="riesgo" class="riesgo" hidden></div>
+<div class="tabs"><div class="tab on" data-t="orb">① Ruptura ORB (600 €/op)</div><div class="tab" data-t="escaner">② Escáner intradía (300 €/op)</div><div class="tab" data-t="registro">③ Registro histórico</div></div>
+<div id="view"></div>
+</div>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+const K=new URLSearchParams(location.search).get('k')||'';
+const LOCAL=['127.0.0.1','localhost'].includes(location.hostname)&&!new URLSearchParams(location.search).has('static');
+const DATA_URL=()=>LOCAL?'/api/data?k='+encodeURIComponent(K):'data.json?t='+Date.now();
+let FILT={from:'',to:'',asset:'',strat:'',status:''};const _T=location.hash.slice(1)||new URLSearchParams(location.search).get('tab');let TAB=(['orb','escaner','registro'].includes(_T)?_T:null)||localStorage.getItem('tab')||'orb';let D=null;
+document.querySelectorAll('.tab').forEach(t=>{t.classList.toggle('on',t.dataset.t==TAB);t.onclick=()=>{TAB=t.dataset.t;localStorage.setItem('tab',TAB);document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x==t));render()}});
+const nf=(x,d=2)=>x==null||isNaN(x)?'—':Number(x).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d});
+const eur=(x,d=0,sg=false)=>x==null||isNaN(x)?'—':(sg&&x>0?'+':'')+nf(x,d)+' €';
+const R=(x)=>x==null||isNaN(x)?'—':(x>0?'+':'')+nf(x,2)+'R';
+const cls=x=>x==null?'':(x>0?'pos':(x<0?'neg':''));
+const px=(x,d)=>x==null?'—':Number(x).toFixed(d??5);
+const hm=s=>{if(!s)return'—';const t=new Date(s);return isNaN(t)?'—':t.toLocaleString('es-ES',{timeZone:'Europe/Madrid',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'})};
+const hms=s=>{if(!s)return'—';const t=new Date(s);return isNaN(t)?'—':t.toLocaleTimeString('es-ES',{timeZone:'Europe/Madrid'})};
+const esc=s=>s==null?'—':String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const pct=x=>x==null?'—':nf(x*100,1)+' %';
+function table(cols,rows,empty){if(!rows||!rows.length)return `<div class="tw"><div class="empty">${empty}</div></div>`;
+ return `<div class="tw"><table><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${cols.map(c=>{const v=c[1](r);return `<td class="${c[2]||''}">${v}</td>`}).join('')}</tr>`).join('')}</tbody></table></div>`}
+function bar(p,col){p=Math.max(0,Math.min(100,p||0));return `<div class="bar"><i style="width:${p}%;background:${col||'var(--acc)'}"></i></div>`}
+function card(k,v,s,extra=''){return `<div class="card"><div class="k">${k}</div><div class="v">${v}</div>${s?`<div class="s">${s}</div>`:''}${extra}</div>`}
+function eqchart(eq,sb,live){const pts=(eq||[]).map(p=>({t:new Date(p.ts),e:p.equity,b:p.balance})).filter(p=>p.e!=null);
+ if(live!=null)pts.push({t:new Date(),e:live,b:null});if(pts.length<2)return '<div class="empty">Sin historial de equity todavía.</div>';
+ const W=900,H=230,P=44;const ys=pts.map(p=>p.e).concat([sb]);let mn=Math.min(...ys),mx=Math.max(...ys);if(mx-mn<50){mx+=25;mn-=25}
+ const t0=pts[0].t,t1=pts[pts.length-1].t,X=t=>P+(W-P-8)*((t-t0)/((t1-t0)||1)),Y=v=>8+(H-30)*(1-(v-mn)/(mx-mn));
+ const d=pts.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+','+Y(p.e).toFixed(1)).join('');
+ const area=d+`L${X(t1).toFixed(1)},${H-22}L${X(t0).toFixed(1)},${H-22}Z`;const up=pts[pts.length-1].e>=sb;const c=up?'#b7f34b':'#ff6b6b';
+ let g='';for(let i=0;i<=4;i++){const v=mn+(mx-mn)*i/4;g+=`<line x1="${P}" x2="${W-8}" y1="${Y(v)}" y2="${Y(v)}" stroke="#183238"/><text x="2" y="${Y(v)+3}">${Math.round(v).toLocaleString('es-ES')}</text>`}
+ const tl=[t0,new Date((+t0+ +t1)/2),t1].map(t=>`<text x="${X(t)-14}" y="${H-6}">${t.toLocaleTimeString('es-ES',{timeZone:'Europe/Madrid',hour:'2-digit',minute:'2-digit'})}</text>`).join('');
+ return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="display:block">${g}<line x1="${P}" x2="${W-8}" y1="${Y(sb)}" y2="${Y(sb)}" stroke="#89a4a4" stroke-dasharray="4 4"/><path d="${area}" fill="${c}" opacity=".08"/><path d="${d}" fill="none" stroke="${c}" stroke-width="2"/>${tl}</svg>`}
+function spark(a){if(!a||a.length<2)return'';const mn=Math.min(...a),mx=Math.max(...a);const d=a.map((v,i)=>(i?'L':'M')+(i*100/(a.length-1)).toFixed(1)+','+(18-16*(v-mn)/((mx-mn)||1)).toFixed(1)).join('');return `<svg viewBox="0 0 100 20" width="100%" height="20" preserveAspectRatio="none"><path d="${d}" fill="none" stroke="${a[a.length-1]>=a[0]?'#b7f34b':'#ff6b6b'}" stroke-width="1.3"/></svg>`}
+function ticker(){document.getElementById('ticker').innerHTML=D.quotes.map(q=>`<div class="tq"><div class="n"><span>${esc(q.mt5_sym||q.name)}</span>${q.delayed?'<span class="badge b-warn" title="'+esc(q.name)+': precio MT5 = futuro de Yahoo (retrasado 10-15 min) menos la base medida'+(q.mt5_approx?' (base aproximada)':'')+'">'+(q.mt5_approx?'≈ ':'')+'MT5 · retr.</span>':''}</div><div class="p mono">${q.px==null?'—':px(q.px,q.dec)}</div><div class="n"><span class="${cls(q.chg_pct)}">${q.chg_pct==null?'—':(q.chg_pct>0?'+':'')+nf(q.chg_pct,2)+' %'}</span><span class="mono">${hms(q.bar_ts)}</span></div>${spark(q.spark)}</div>`).join('');
+ document.getElementById('qnote').innerHTML=esc(D.quotes_note)+(D.mt5_basis?' · '+Object.values(D.mt5_basis).map(esc).join(' · '):'')+` · Última descarga: ${hms(D.quotes_fetched)}`+(D.quotes_error?` · <span class="neg">error: ${esc(D.quotes_error)}</span>`:'')}
+function accountCards(a,cfg){const dl=a.daily_loss_eur,ml=a.max_loss_eur;
+ return `<div class="grid">${card('Balance (cerradas)',eur(a.balance,2),`Inicio ${eur(a.start_balance,0)}`)}
+ ${card('Equity en vivo',`<span class="${cls(a.equity-a.start_balance)}">${eur(a.equity,2)}</span>`,`Flotante ${eur(a.floating,2,true)}`)}
+ ${card('P&L de hoy',`<span class="${cls(a.today_pnl)}">${eur(a.today_pnl,2,true)}</span>`,`Realizado ${eur(a.today_realized,2,true)} · flotante ${eur(a.today_floating,2,true)}`)}
+ ${card('Objetivo FTMO +'+nf(a.target_eur,0)+' €',`${eur(a.progress_eur,0,true)}`,`${nf(a.progress_pct,1)} % realizado · con flotante ${nf(a.progress_equity_pct,1)} %`,bar(a.progress_pct))}
+ ${card('Margen pérdida diaria',eur(a.daily_left,0),`Límite −${nf(dl,0)} € · usado ${eur(Math.max(0,-(a.today_pnl||0)),0)}`,bar(100*(a.daily_left/dl),a.daily_left<dl*0.3?'var(--red)':'var(--pri)'))}
+ ${card('Margen pérdida total',eur(a.total_left,0),`Límite −${nf(ml,0)} € (equity mín. ${eur(a.start_balance-ml,0)})`,bar(100*(a.total_left/ml),a.total_left<ml*0.3?'var(--red)':'var(--pri)'))}
+ ${card('Guardia diaria',a.daily_guard_eur==null?'—':eur(a.guard_left,0),`Guardia ${eur(a.daily_guard_eur,0)} · riesgo abierto/pendiente hoy ${eur(a.open_risk,0)}`)}
+ ${card('Días hábiles',a.days_used==null?'—':`${a.days_used} / ${a.days_total}`,`Quedan ${a.days_left??'—'} · inicio ${hm(a.start)}`)}
+ </div>
+ <div class="grid">${card('Operaciones',`${a.n_closed} cerradas`,`${a.n_open} abiertas · ${a.n_pending} pendientes`)}${card('Acierto',a.win_rate==null?'—':nf(a.win_rate,1)+' %',`${a.wins} ganadas · ${a.losses} perdidas`)}
+ ${card('R medio',`<span class="${cls(a.avg_r)}">${R(a.avg_r)}</span>`,`Profit factor ${a.profit_factor==null?'—':nf(a.profit_factor,2)}`)}${card('Mejor / peor',`<span class="pos">${eur(a.best,0,true)}</span> / <span class="neg">${eur(a.worst,0,true)}</span>`,'por operación cerrada')}
+ ${card('Drawdown máx.',eur(a.max_dd,0),'sobre equity registrada')}${card('Riesgo por operación',eur(a.risk_eur,0),`Estado: ${esc(a.status)}`)}</div>`}
+const sizeCell=t=>esc(t.size_txt||(t.lots!=null?t.lots+' lotes':'—'));
+function openCols(kind){return [['#',t=>t.id],['Sesión',t=>esc(t.session_name)],['Activo',t=>`<b>${esc(t.asset)+(t.mt5_sym&&t.mt5_sym!==t.asset?' <span class="mono" style="opacity:.7">'+esc(t.mt5_sym)+'</span>':'')}</b>`],['Lado',t=>`<span class="badge ${t.dir>0?'b-acc':'b-red'}">${t.lado}</span>`],['Tipo entrada',t=>esc(t.entry_type)],
+ ['Orden colocada',t=>hm(t.t_signal)],['Hora entrada',t=>hm(t.fill_ts)],['Entrada plan',t=>px(t.entry,t.dec),'num'],['Precio entrada',t=>px(t.fill,t.dec),'num'],['Precio vivo',t=>px(t.live_px??t.mark,t.dec)+(t.live_px==null&&t.mark!=null?' <span class="mf">(gestor)</span>':''),'num'],
+ ['SL',t=>px(t.stop,t.dec),'num'],['TP',t=>px(t.target,t.dec),'num'],['Lotes',sizeCell],['Riesgo',t=>eur(t.risk_eur,0),'num'],[kind=='orb'?'Prob. est.':'Puntuación / prob.',t=>kind=='orb'?pct(t.p_est):`${nf(t.score,0)}/100 · ${pct(t.p_est)}`,'num'],
+ ['Coste',t=>t.cost_eur==null?'—':`${eur(t.cost_eur,0)} (${nf(t.cost_r,3)}R)`,'num'],['P&L flotante',t=>`<span class="${cls(t.float_eur)}">${eur(t.float_eur,2,true)}</span>`,'num'],['R',t=>`<span class="${cls(t.float_r)}">${R(t.float_r)}</span>`,'num'],
+ ['Fuente',t=>t.float_src=='vivo'?`<span class="badge b-acc">vivo ${hms(t.live_ts)}</span>`:(t.float_src?'<span class="badge">gestor</span>':'—')],[kind=='orb'?'Corte / cierre sesión':'Cierre máx.',t=>kind=='orb'?`${hms(t.cutoff)} / ${hms(t.end_ts)}`:hm(t.end_ts)]]}
+function pendCols(kind){return [['#',t=>t.id],['Sesión',t=>esc(t.session_name)],['Activo',t=>`<b>${esc(t.asset)+(t.mt5_sym&&t.mt5_sym!==t.asset?' <span class="mono" style="opacity:.7">'+esc(t.mt5_sym)+'</span>':'')}</b>`],['Lado',t=>`<span class="badge ${t.dir>0?'b-acc':'b-red'}">${t.lado} ${t.ord=='stop'?'STOP':''}</span>`],['Colocada',t=>hm(t.t_signal)],
+ ['Entrada',t=>px(t.entry,t.dec),'num'],['SL',t=>px(t.stop,t.dec),'num'],['TP',t=>px(t.target,t.dec),'num'],['Precio vivo',t=>px(t.live_px,t.dec),'num'],['Distancia a entrada',t=>t.dist_entry==null?'—':px(t.dist_entry,t.dec),'num'],['Lotes',sizeCell],['Riesgo',t=>eur(t.risk_eur,0),'num'],
+ [kind=='orb'?'Prob. est.':'Puntuación',t=>kind=='orb'?pct(t.p_est):nf(t.score,0),'num'],['Caduca (corte)',t=>hms(t.cutoff||t.end_ts)]]}
+function closedCols(kind){return [['#',t=>t.id],['Fecha',t=>esc(t.date)],['Sesión',t=>esc(t.session_name)],['Activo',t=>`<b>${esc(t.asset)+(t.mt5_sym&&t.mt5_sym!==t.asset?' <span class="mono" style="opacity:.7">'+esc(t.mt5_sym)+'</span>':'')}</b>`],['Lado',t=>`<span class="badge ${t.dir>0?'b-acc':'b-red'}">${t.lado}</span>`],['Tipo entrada',t=>esc(t.entry_type)],
+ ['Orden colocada',t=>hm(t.t_signal)],['Hora entrada',t=>hm(t.fill_ts)],['Hora salida',t=>hm(t.exit_ts)],['Entrada plan',t=>px(t.entry,t.dec),'num'],['Precio entrada',t=>px(t.fill,t.dec),'num'],['Precio salida',t=>px(t.exit,t.dec),'num'],
+ ['SL',t=>px(t.stop,t.dec),'num'],['TP',t=>px(t.target,t.dec),'num'],['Lotes',sizeCell],['Riesgo',t=>eur(t.risk_eur,0),'num'],[kind=='orb'?'Prob. est.':'Puntuación / prob.',t=>kind=='orb'?pct(t.p_est):`${nf(t.score,0)}/100 · ${pct(t.p_est)}`,'num'],
+ ['Coste',t=>t.cost_eur==null?'—':`${eur(t.cost_eur,0)} (${nf(t.cost_r,3)}R)`,'num'],['P&L',t=>`<span class="${cls(t.pnl_eur)}">${eur(t.pnl_eur,2,true)}</span>`,'num'],['R',t=>`<span class="${cls(t.r)}">${R(t.r)}</span>`,'num'],
+ ['Motivo salida',t=>`<span class="badge ${t.oc=='TP'?'b-acc':t.oc=='SL'?'b-red':''}">${esc(t.oc_txt)}</span>`],['Estado',t=>esc(t.status)]]}
+function events(ev){if(!ev||!ev.length)return '<div class="card empty">Sin eventos todavía.</div>';
+ return `<div class="card log" style="padding:0">${ev.map(e=>`<div><span class="t">${hm(e.ts)}</span><span class="badge ${e.kind=='entrada'?'b-pri':e.kind=='cierre'?(e.pnl>=0?'b-acc':'b-red'):''}">${esc(e.kind)}</span> ${esc(e.text)}</div>`).join('')}</div>`}
+function orbView(o){const c=o.config||{},a=o.account,ses=(o.session||{}).sessions||[],mc=o.mc||{},fc=o.ftmo_costs||{};
+ const sigCols=[['Sesión',s=>s.session=='londres'?'Londres':s.session=='nuevayork'?'Nueva York':esc(s.session)],['Hora análisis',s=>hm(s.run_ts)],['Activo',s=>`<b>${esc(s.asset)+(s.mt5_sym&&s.mt5_sym!==s.asset?' <span class="mono" style="opacity:.7">'+esc(s.mt5_sym)+'</span>':'')}</b>`],['Estado precio',s=>`<span class="badge ${s.status=='ROTO'?'b-warn':''}">${esc(s.status)}</span>`],
+  ['Rango 15m máx.',s=>px(s.hi,s.dec),'num'],['Rango 15m mín.',s=>px(s.lo,s.dec),'num'],['Rotura compra ≥',s=>px(s.hi,s.dec),'num'],['Rotura venta ≤',s=>px(s.lo,s.dec),'num'],
+  ['Lado',s=>s.direction>0?'COMPRA':s.direction<0?'VENTA':'—'],['Orden',s=>s.ord=='market'?'mercado (tarde)':esc(s.ord)],['Entrada',s=>px(s.entry,s.dec),'num'],['SL',s=>px(s.stop,s.dec),'num'],['TP',s=>px(s.target,s.dec),'num'],
+  ['Prob. est.',s=>pct(s.p_est),'num'],['MC / hist.',s=>`${pct(s.p_mc)} / ${pct(s.p_hist)}`,'num'],['Módulos',s=>nf(s.score,2),'num'],['Coste (filtro ≤0,15R)',s=>s.cost_r==null?'—':`<span class="${s.cost_r>0.15?'neg':''}">${nf(s.cost_r,3)}R</span>`,'num'],
+  ['Lotes',s=>esc(s.size)],['Riesgo',s=>eur(s.risk_eur,0),'num'],['Filtros',s=>s.selected?'<span class="badge b-acc">PASA</span>':(s.vetos&&s.vetos.length?'<span class="badge b-red">VETO</span>':'<span class="badge b-red">NO PASA</span>')],['Resultado / motivo',s=>esc(s.result)]];
+ const ma=o.orb_module_assets||[],ms=o.modules_source||{},MK=['m1','m2','m3','m4','m5','m6','m7','m8','m9','m10','m11'];
+ const modsByAsset={};(o.modules||[]).forEach(m=>(m.readings||[]).forEach(r=>{(modsByAsset[r.asset]=modsByAsset[r.asset]||{})[m.id]=r}));
+ const modCell=(a,k)=>{const r=(modsByAsset[a.asset]||{})[k];if(!r)return '—';const sc=r.score,d=a.dir||0;const c=sc==null?'':(d&&sc*d<-0.2?'neg':d&&sc*d>0.1?'pos':'');return `<span class="${c}" title="${esc(r.txt||'')}">${sc==null?(k=='m5'?esc(((r.txt||'').match(/→ (\S+( \S+)?);/)||[])[1]||'i'):'i'):nf(sc,2)}</span>`};
+ const modTbl=ma.length?table([['Activo',a=>`<b>${esc(a.asset)}</b>`],['Estado',a=>esc(a.status)],['Lado',a=>a.dir>0?'COMPRA':a.dir<0?'VENTA':'—'],['S',a=>nf(a.score,2),'num'],...MK.map(k=>[k.toUpperCase(),a=>modCell(a,k),'num']),['En contra',a=>a.against??'—','num'],
+   ['Veredicto',a=>a.selected?'<span class="badge b-acc">PASA</span>':(a.vetos&&a.vetos.length?'<span class="badge b-red">VETO</span>':'<span class="badge">NO</span>')],['Motivo',a=>esc((a.vetos&&a.vetos.length)?a.vetos.join('; '):(a.why||'—'))]],ma,'—'):'';
+ const X=o.orb11||{},FK=['F8','F6','F7','F1','F2','F11','F3','F4','F5','F10','F9'];
+ const fc11=v=>v===true?'<span class="pos">✓</span>':v===false?'<span class="neg">✗</span>':'<span style="opacity:.5">·</span>';
+ const acc11=e=>e.accion=='señal_valida'?`<span class="badge b-acc">VÁLIDA ${e.nivel}/11${e.calidad?' '+esc(e.calidad):''}</span>`:e.accion=='descartar'?'<span class="badge b-red">DESCARTAR</span>':'<span class="badge b-warn">ESPERAR</span>';
+ const c11=[['Sesión',e=>e.session=='londres'?'Londres':'Nueva York'],['Vela',e=>hm(e.t_eval)],['Activo',e=>`<b>${esc(e.activo)}</b>`],['Rango máx.',e=>e.json.rango.maximo??'—','num'],['Rango mín.',e=>e.json.rango.minimo??'—','num'],['R/ATR',e=>e.json.rango.ratio_atr==null?'—':nf(e.json.rango.ratio_atr,2),'num'],
+  ['Dir.',e=>e.json.direccion=='long'?'COMPRA':e.json.direccion=='short'?'VENTA':'—'],...FK.map(k=>[k,e=>fc11(e.json.filtros[k])]),['Nivel',e=>e.nivel+'/11','num'],['Acción',e=>acc11(e)],
+  ['Entrada',e=>e.json.entrada??'—','num'],['SL',e=>e.json.sl??'—','num'],['TP',e=>e.json.tp??'—','num'],['R:R',e=>e.json.rr??'—','num'],
+  ['Papel',e=>e.trade_id?('#'+e.trade_id):esc(e.trade_note||'—')],['Motivos',e=>esc((e.json.motivos_rechazo||[]).join('; ')||'—')],
+  ['JSON',e=>`<details><summary>ver</summary><pre style="white-space:pre-wrap;max-width:520px;font-size:11px">${esc(JSON.stringify(e.json,null,1))}</pre></details>`]];
+ const df=X.definitions||{},wi=X.windows||{};
+ const modSec=`<div class="sec"><h2>ORB 11 FILTROS · última evaluación por activo y sesión (hoy)</h2>${table(c11,X.latest,'Aún no hay evaluaciones ORB 11 hoy (1ª: '+esc((wi.nuevayork||{}).range_end||'15:45')+' en Nueva York).')}
+   <div class="note"><b>Orden:</b> F8 → F6 → F7 → F1 → F2 → F11 → F3 → F4 → F5 → F10 → F9. ✓ pasa · ✗ falla · · no evaluado / nulo. ${esc(df.puntuacion||'')}<br>
+   Ventanas (Madrid): Londres rango ${esc((wi.londres||{}).range_start||'')}–${esc((wi.londres||{}).range_end||'')}, F11 ≤ ${esc((wi.londres||{}).f11||'')}, cierre total ${esc((wi.londres||{}).window_end||'')} · Nueva York rango ${esc((wi.nuevayork||{}).range_start||'')}–${esc((wi.nuevayork||{}).range_end||'')}, F11 ≤ ${esc((wi.nuevayork||{}).f11||'')}, cierre total ${esc((wi.nuevayork||{}).window_end||'')}.<br>
+   ${[df.f1,df.f11,df.volumen,df.atr,df.vwap,df.ema,df.swing,df.f8,df.noticias].filter(Boolean).map(esc).join('<br>')}</div>
+   <details style="margin-top:8px"><summary>Todas las evaluaciones de hoy (${(X.evals||[]).length})</summary>${table(c11,(X.evals||[]).slice().reverse(),'—')}</details></div>`;
+ const costCols=[['Activo FTMO',r=>esc(r.asset)+(r.mt5_sym&&r.mt5_sym!==r.asset?' <span class="mono" style="opacity:.7">'+esc(r.mt5_sym)+'</span>':'')],['Ticker',r=>esc(r.tk)],['Comisión ida+vuelta (USD/lote)',r=>nf(r.commission,2),'num'],['Diferencial mediano',r=>nf(r.spread_median,2),'num'],['Coste total (precio)',r=>r.allin_px==null?'—':Number(r.allin_px).toPrecision(3),'num'],['Escenario más cercano',r=>esc(r.closer_to)]];
+ return `${accountCards(a,c)}
+ <div class="row2 sec"><div class="card"><h2>Curva de equity</h2>${eqchart(o.equity,a.start_balance,a.equity)}<div class="note">Línea discontinua = saldo inicial ${eur(a.start_balance,0)}. Último punto = equity en vivo.</div></div>
+ <div class="card"><h2>Reglas y configuración (orb_config.json)</h2><div class="rules">
+ <div>Estrategia: <b>ORB 11 FILTROS · opción 1</b> (F1 1,5–2,2, F11 primeros 30 min, sin AUD/USD; entrada a mercado al cierre de la vela de confirmación, SL = extremo contrario ± buffer, TP 2R, cierre total 11:00 / 17:30)</div><div>Riesgo/op: <b>${eur(c.risk_eur,0)}</b></div>
+ <div>Guardia diaria: <b>${eur(c.daily_guard_eur,0)}</b></div><div>Máx. señales/sesión: <b>${c.max_signals_per_session??'—'}</b></div><div>Universo: <b>8 activos fijos (sin AUD/USD)</b></div><div>Volumen: <b>ticks Dukascopy</b></div>
+ <div>Objetivo FTMO: <b>+${nf(c.challenge_target_eur,0)} €</b></div><div>Pérdida diaria máx.: <b>−${nf(c.daily_loss_eur,0)} €</b></div><div>Pérdida total máx.: <b>−${nf(c.max_loss_eur,0)} €</b></div><div>Plazo: <b>${c.challenge_days??'—'} días hábiles</b> (quedan ${a.days_left??'—'})</div></div>
+ <h2 style="margin-top:12px">Sesiones (hora de Madrid)</h2>${table([['Sesión',s=>esc(s.name)],['Rango 15m',s=>`${s.open}–${s.range_end}`],['1ª evaluación',s=>s.first_signal],['Límite F11',s=>s.f11||'—'],['Cierre total',s=>s.end],['Ahora',s=>`<span class="badge">${esc(s.status)}</span>`]],ses,'—')}
+ <div class="note">Gestor: ${o.manager?`${esc(o.manager.status)} (PID ${o.manager.pid??'—'})`:'—'}</div></div></div>
+ <div class="sec"><h2>Posiciones abiertas (P&L en vivo)</h2>${table(openCols('orb'),o.open,'No hay posiciones abiertas.')}</div>
+ ${modSec}
+ ${(o.pending||[]).length?`<div class="sec"><h2>Órdenes pendientes (sistema anterior)</h2>${table(pendCols('orb'),o.pending,'—')}</div>`:''}
+ <div class="row2 sec"><div><h2>Registro de eventos en vivo</h2>${events(o.events)}</div>
+ <div class="card"><h2>Monte Carlo del reto (costes FTMO)</h2>${mc.available?`<div class="rules"><div>Pasar: <b class="pos">${pct(mc.p_pass)}</b></div><div>Quemar cuenta: <b class="neg">${pct(mc.p_blow)}</b></div><div>Ni una cosa ni otra: <b>${pct(mc.p_none)}</b></div><div>Riesgo: <b>${eur(mc.risk,0)}</b></div><div>Ops/día: <b>${nf(mc.trades_per_day,2)}</b></div><div>R medio/op: <b>${nf(mc.avg_R,3)}R</b></div><div>Resultado mediano: <b>${eur(mc.med_end,0,true)}</b></div><div>Días medianos hasta pasar: <b>${nf(mc.days_pass,0)}</b></div></div><div class="note">${esc(mc.note)} Fuente: ${esc(mc.source)}</div>`:'<div class="empty">—</div>'}
+ <h2 style="margin-top:12px">Calendario alto impacto hoy</h2><div class="note">${((o.calendar||{}).events||[]).map(e=>`${esc(e.time)} ${esc(e.country)} ${esc(e.title)}`).join('<br>')||'—'}<br>${esc((o.calendar||{}).source)}</div></div></div>
+ <div class="sec"><details><summary>Registro del sistema anterior (variante ROBUSTA, retirada el 13/11/2026)</summary>${table(sigCols,o.signals,'—')}<div class="note">Solo histórico de journal.sqlite (orb_signals). Ya no coloca órdenes.</div></details></div>
+ <div class="sec"><h2>Historial de operaciones cerradas</h2>${table(closedCols('orb'),o.closed,'Aún no hay operaciones cerradas.')}</div>
+ <div class="sec"><h2>Costes FTMO por activo</h2>${fc.available?table(costCols,fc.rows,'—'):'<div class="card empty">—</div>'}<div class="note">${esc(fc.note)} Medido: ${esc(fc.window)}. El gestor en vivo usa el escenario de costes «bajo»; la columna Coste de cada operación es el coste real que aplicó el gestor.</div></div>`}
+;function escMods(o){const g=o.modules||{};const ks=['m1','m2','m3','m4','m5','m6'];const rows=ks.map(k=>g[k]).filter(Boolean);if(!rows.length)return '';const st=s=>s==='pasa'?'pos':s==='bloquea'?'neg':'';
+ return `<div class="sec"><h2>6 filtros · última evaluación</h2><div class="rules">${rows.map((m,i)=>`<div><b>m${i+1} ${esc(m.name)}</b> · <span class="${st(m.status)}">${esc(m.status||'—')}</span> · ${esc(m.detail||'')}</div>`).join('')}</div></div>`}
+function escView(o){const a=o.account,c=o.config||{},sc=o.scanner||{};
+ return `${accountCards(a,c)}
+ <div class="row2 sec"><div class="card"><h2>Curva de equity</h2>${eqchart(o.equity,a.start_balance,a.equity)}</div>
+ <div class="card"><h2>Escáner y reglas</h2><div class="rules"><div>Estado: <b class="${sc.running?'pos':'neg'}">${sc.running?'ACTIVO':'PARADO'}</b> (PID ${sc.pid??'—'})</div><div>Horario: <b>${esc(sc.hours)}</b></div><div>Último ciclo: <b>${hms(sc.last_cycle)}</b></div>
+ <div>Estrategia: <b>6 filtros</b> (tendencia EMA, VWAP, volumen, estructura, noticias −90/+30, RR del TP)</div>
+ <div>Universo: <b>${sc.n_assets??c.n_assets??'—'} símbolos FTMO MT5</b> con feed fiable</div>
+ <div>Riesgo/op: <b>${eur(c.risk_eur,0)}</b></div><div>Máx. simultáneas: <b>${c.max_concurrent??'—'}</b></div><div>RR objetivo: <b>${c.rr??'—'}R</b></div><div>Tiempo máx.: <b>${c.max_hold_min??'—'} min</b></div><div>Máx. pérdidas seguidas: <b>${c.max_consecutive_losses??'—'}</b></div><div>Guardia diaria: <b>${eur(c.daily_guard_eur,0)}</b></div></div>
+ <div class="note">${esc(o.no_edge_note||'Prueba en papel. La puntuación QB5, si aparece, solo ordena; ya no filtra.')}</div></div></div>
+ <div class="sec"><h2>Posiciones abiertas (P&L en vivo)</h2>${table(openCols('esc'),o.open,'No hay posiciones abiertas.')}</div>
+ ${escMods(o)}
+ ${o.pending&&o.pending.length?`<div class="sec"><h2>Órdenes pendientes</h2>${table(pendCols('esc'),o.pending,'')}</div>`:''}
+ <div class="row2 sec"><div><h2>Registro de eventos en vivo</h2>${events(o.events)}</div>
+ <div><h2>Último escaneo por activo</h2>${table([['Activo',r=>esc(r.asset)+(r.mt5_sym&&r.mt5_sym!==r.asset?' <span class="mono" style="opacity:.7">'+esc(r.mt5_sym)+'</span>':'')],['Vela',r=>hms(r.bar_ts)],['Precio',r=>nf(r.last,4),'num'],['Punt.',r=>r.score==null?'—':nf(r.score,0),'num'],['Lado',r=>esc(r.lado)],['Setup',r=>esc(r.setup)],['Motivo',r=>esc(r.reason)]],o.scans,'—')}
+ <h2 style="margin-top:10px">Señales omitidas recientes</h2>${table([['Hora',r=>hms(r.ts)],['Activo',r=>esc(r.asset)+(r.mt5_sym&&r.mt5_sym!==r.asset?' <span class="mono" style="opacity:.7">'+esc(r.mt5_sym)+'</span>':'')],['Motivo',r=>esc(r.message)]],(o.skips||[]).slice(0,10),'—')}</div></div>
+ <div class="sec"><h2>Historial de operaciones cerradas</h2>${table(closedCols('esc'),o.closed,'Aún no hay operaciones cerradas.')}</div>`}
+function render(){if(!D)return;ticker();const v=document.getElementById('view');if(TAB=='registro'){if(document.activeElement&&['SELECT','INPUT'].includes(document.activeElement.tagName))return;const y=window.scrollY;v.innerHTML=regView();window.scrollTo(0,y);return}const o=D[TAB];
+ if(!o||!o.ok){v.innerHTML=`<div class="card neg">Sin datos: ${esc(o&&o.error)}</div>`;return}
+ const y=window.scrollY;v.innerHTML=TAB=='orb'?orbView(o):escView(o);window.scrollTo(0,y)}
+function allTrades(){const out=[];for(const [k,lab] of [['orb','ORB'],['escaner','Escáner']]){const o=D[k];if(!o||!o.ok)continue;for(const t of [...(o.pending||[]),...(o.open||[]),...(o.closed||[])])out.push(Object.assign({strat:lab},t))}
+ return out.sort((a,b)=>(b.fill_ts||b.t_signal||'').localeCompare(a.fill_ts||a.t_signal||''))}
+function filtered(){return allTrades().filter(t=>(!FILT.from||t.date>=FILT.from)&&(!FILT.to||t.date<=FILT.to)&&(!FILT.asset||t.asset==FILT.asset)&&(!FILT.strat||t.strat==FILT.strat)&&(!FILT.status||t.status==FILT.status))}
+const CSVF=[['estrategia','strat'],['id','id'],['fecha','date'],['sesion','session_name'],['activo','asset'],['lado','lado'],['tipo_entrada','entry_type'],['estado','status'],['orden_colocada','t_signal'],['hora_entrada','fill_ts'],['hora_salida','exit_ts'],['entrada_plan','entry'],['precio_entrada','fill'],['precio_salida','exit'],['sl','stop'],['tp','target'],['lotes','size_txt'],['riesgo_eur','risk_eur'],['prob_est','p_est'],['puntuacion','score'],['coste_eur','cost_eur'],['coste_r','cost_r'],['pnl_eur','pnl_eur'],['r','r'],['pnl_flotante_eur','float_eur'],['motivo_salida','oc_txt']];
+function dlCSV(){const rows=filtered();const q=v=>v==null?'':(typeof v=='number'?String(v).replace('.',','):'"'+String(v).replace(/"/g,'""')+'"');
+ const txt='\ufeff'+CSVF.map(c=>c[0]).join(';')+'\n'+rows.map(t=>CSVF.map(c=>q(t[c[1]])).join(';')).join('\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'}));a.download='registro_'+(FILT.strat||'todas')+'_'+new Date().toISOString().slice(0,10)+'.csv';a.click()}
+function setF(k,v){FILT[k]=v;render()}
+function regView(){const all=allTrades(),rows=filtered();const assets=[...new Set(all.map(t=>t.asset))].sort();
+ const sel=(k,opts,lab)=>`<select onchange="setF('${k}',this.value)" style="background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:8px;padding:6px"><option value="">${lab}</option>${opts.map(o=>`<option ${FILT[k]==o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+ const inp=(k)=>`<input type="date" value="${FILT[k]}" onchange="setF('${k}',this.value)" style="background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:8px;padding:5px">`;
+ const closed=rows.filter(t=>t.status=='CERRADA');const days={};
+ for(const t of rows){const d=days[t.date+'|'+t.strat]||(days[t.date+'|'+t.strat]={date:t.date,strat:t.strat,n:0,w:0,l:0,pnl:0,r:0,open:0,fl:0});if(t.status=='CERRADA'){d.n++;d.pnl+=t.pnl_eur||0;d.r+=t.r||0;(t.r||0)>0?d.w++:d.l++}else if(t.status=='ABIERTA'){d.open++;d.fl+=t.float_eur||0}}
+ const dl=Object.values(days).sort((a,b)=>b.date.localeCompare(a.date)||a.strat.localeCompare(b.strat));
+ const tot=closed.reduce((s,t)=>s+(t.pnl_eur||0),0),totR=closed.reduce((s,t)=>s+(t.r||0),0),w=closed.filter(t=>(t.r||0)>0).length;
+ const cols=[['Estrategia',t=>`<span class="badge ${t.strat=='ORB'?'b-pri':'b-warn'}">${t.strat}</span>`],...closedCols('orb').slice(0,1),...closedCols('orb').slice(1,16),
+  ['Prob. / punt.',t=>t.strat=='ORB'?pct(t.p_est):`${nf(t.score,0)}/100 · ${pct(t.p_est)}`,'num'],['Coste',t=>t.cost_eur==null?'—':`${eur(t.cost_eur,0)} (${nf(t.cost_r,3)}R)`,'num'],
+  ['P&L',t=>t.status=='CERRADA'?`<span class="${cls(t.pnl_eur)}">${eur(t.pnl_eur,2,true)}</span>`:(t.status=='ABIERTA'?`<span class="${cls(t.float_eur)}">${eur(t.float_eur,2,true)}</span> <span class="mf">flot.</span>`:'—'),'num'],
+  ['R',t=>t.status=='CERRADA'?`<span class="${cls(t.r)}">${R(t.r)}</span>`:(t.status=='ABIERTA'?R(t.float_r):'—'),'num'],['Motivo salida',t=>esc(t.oc_txt)],['Estado',t=>`<span class="badge">${esc(t.status)}</span>`]];
+ return `<div class="card"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="k">Filtros</span> Desde ${inp('from')} Hasta ${inp('to')} ${sel('asset',assets,'Todos los activos')} ${sel('strat',['ORB','Escáner'],'Ambas estrategias')} ${sel('status',['CERRADA','ABIERTA','PENDIENTE','CANCELADA'],'Todos los estados')}
+ <button onclick="FILT={from:'',to:'',asset:'',strat:'',status:''};render()" class="tab">Quitar filtros</button><button onclick="dlCSV()" class="tab on">⬇ Descargar CSV</button></div>
+ <div class="note">Todas las operaciones en papel de ambas cuentas desde el inicio. ${LOCAL?'':'Registro permanente en el repositorio: <a style="color:var(--pri)" href="registro_orb.csv">registro_orb.csv</a> · <a style="color:var(--pri)" href="registro_escaner.csv">registro_escaner.csv</a>'}</div></div>
+ <div class="grid">${card('Operaciones (filtro)',rows.length,`${closed.length} cerradas`)}${card('P&L cerradas',`<span class="${cls(tot)}">${eur(tot,2,true)}</span>`,`${R(totR)} en total`)}${card('Acierto',closed.length?nf(w/closed.length*100,1)+' %':'—',`${w} ganadas · ${closed.length-w} perdidas`)}${card('R medio',closed.length?R(totR/closed.length):'—','por operación cerrada')}</div>
+ <div class="sec"><h2>Totales por día</h2>${table([['Fecha',d=>esc(d.date)],['Estrategia',d=>esc(d.strat)],['Cerradas',d=>d.n,'num'],['Ganadas',d=>d.w,'num'],['Perdidas',d=>d.l,'num'],['P&L cerradas',d=>`<span class="${cls(d.pnl)}">${eur(d.pnl,2,true)}</span>`,'num'],['R',d=>R(d.r),'num'],['Abiertas',d=>d.open,'num'],['Flotante',d=>eur(d.fl,2,true),'num']],dl,'Sin operaciones con este filtro.')}</div>
+ <div class="sec"><h2>Todas las operaciones</h2>${table(cols,rows,'Sin operaciones con este filtro.')}</div>`}
+
+// ---- gráficos de operaciones abiertas (contenedor propio: no se borra con el refresco de la vista)
+const CH={};
+const _tzf=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Madrid',hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+function utcSec(t){const n=Number(t);if(!Number.isFinite(n)||n<=0)return null;const s=Math.floor(n>=1e12?n/1000:n);return(s>=1e9&&s<=4e9)?s:null}
+function madT(ts){const s=utcSec(ts);if(s==null)return null;try{const d=new Date(s*1000);if(!Number.isFinite(d.getTime()))return null;const p={};_tzf.formatToParts(d).forEach(x=>p[x.type]=x.value);const y=+p.year,mo=+p.month,da=+p.day,h=(+p.hour||0)%24,mi=+p.minute,se=+p.second;if(![y,mo,da,h,mi,se].every(Number.isFinite))return null;const out=Date.UTC(y,mo-1,da,h,mi,se)/1000;return Number.isFinite(out)?out:null}catch(e){return null}}
+function fmtChartTime(t){try{const s=typeof t==='number'?t:utcSec(t);if(!Number.isFinite(s))return '';const d=new Date(s>=1e12?s:s*1000);if(!Number.isFinite(d.getTime()))return '';return String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')}catch(e){return ''}}
+function cleanCandles(cs){const out=[],seen=new Set();for(const b of(cs||[])){if(!b||b.length<5)continue;const time=madT(b[0]);if(time==null)continue;const o=+b[1],h=+b[2],l=+b[3],c=+b[4];if(![o,h,l,c].every(Number.isFinite))continue;if(seen.has(time))continue;seen.add(time);out.push({time,open:o,high:h,low:l,close:c})}out.sort((a,b)=>a.time-b.time);return out}
+function renderCharts(){const box=document.getElementById('tcgrid');const C=D.charts||{};const items=C.items||[];
+ const note=document.getElementById('tcnote');
+ note.textContent=items.length?('Velas 1 min en tiempo real (Dukascopy, BID) en escala MT5'+(C.fetched?' · velas descargadas '+hms(C.fetched):'')+' · línea gris = entrada, roja = stop loss, verde = take profit.'):'';
+ if(!items.length){for(const k in CH){try{CH[k].chart&&CH[k].chart.remove()}catch(e){}delete CH[k]}box.innerHTML='<div class="card empty">Sin operaciones abiertas</div>';return}
+ if(!window.LightweightCharts){box.innerHTML='<div class="card empty">No se pudo cargar la librería de gráficos (sin conexión al CDN).</div>';return}
+ const em=box.querySelector('.empty');if(em)em.remove();
+ const ids=new Set(items.map(i=>i.id));
+ for(const k in CH)if(!ids.has(k)){try{CH[k].chart&&CH[k].chart.remove()}catch(e){}CH[k].el.remove();delete CH[k]}
+ for(const it of items){let h=CH[it.id];
+  if(!h){const el=document.createElement('div');el.className='tc';el.innerHTML='<div class="tch"></div><div class="tcc"></div><div class="tcempty">Sin datos de velas por ahora</div>';box.appendChild(el);
+   h={el,chart:null,s:null,lines:[],sig:'',lv:'',levels:[]};CH[it.id]=h}
+  const pc=it.pnl==null?'':`<span class="${it.pnl>=0?'pos':'neg'}">${eur(it.pnl,0,true)}</span>`;
+  h.el.querySelector('.tch').innerHTML=`<b class="mono">${esc(it.sym)}</b><span>${esc(it.asset)} · ${esc(it.strat)} · <b class="${it.lado=='COMPRA'?'pos':'neg'}" style="font-size:12.5px">${esc(it.lado||'')}</b></span>${pc}
+   <span class="mono lg-e">Entrada ${nf(it.entry,it.dec)}</span><span class="mono lg-s">SL ${nf(it.sl,it.dec)}</span><span class="mono lg-t">TP ${nf(it.tp,it.dec)}</span>${it.approx?'<span class="badge b-warn">base aprox.</span>':''}`;
+  const cs=cleanCandles(it.c||[]);
+  if(!cs.length){if(h.s){try{h.s.setData([]);h.s.setMarkers([])}catch(e){}}h.el.querySelector('.tcc').style.display='none';h.el.querySelector('.tcempty').style.display='flex';h.sig='empty';continue}
+  h.el.querySelector('.tcc').style.display='';h.el.querySelector('.tcempty').style.display='none';
+  if(!h.chart){const chart=LightweightCharts.createChart(h.el.querySelector('.tcc'),{autoSize:true,layout:{background:{type:'solid',color:'#0d1a1f'},textColor:'#89a4a4',fontSize:11},
+    grid:{vertLines:{color:'#12242a'},horzLines:{color:'#12242a'}},rightPriceScale:{borderColor:'#183238'},
+    timeScale:{borderColor:'#183238',timeVisible:true,secondsVisible:false,tickMarkFormatter:(t)=>fmtChartTime(t)},
+    localization:{timeFormatter:t=>fmtChartTime(t)},handleScroll:{vertTouchDrag:false},crosshair:{mode:0}});
+   h.chart=chart;
+   h.s=chart.addCandlestickSeries({upColor:'#b7f34b',downColor:'#ff6b6b',borderVisible:false,wickUpColor:'#b7f34b',wickDownColor:'#ff6b6b',
+    priceFormat:{type:'price',precision:it.dec,minMove:Math.pow(10,-it.dec)},
+    autoscaleInfoProvider:orig=>{const r=orig();if(!r||!r.priceRange||!h.levels.length)return r;const lv=h.levels;r.priceRange.minValue=Math.min(r.priceRange.minValue,...lv);r.priceRange.maxValue=Math.max(r.priceRange.maxValue,...lv);return r}});}
+  const sig=cs.length+':'+cs[cs.length-1].time+','+cs[cs.length-1].close;
+  if(sig!==h.sig){h.s.setData(cs);
+   if(it.fill_t){const ft=madT(it.fill_t);const bar=ft==null?null:(cs.slice().reverse().find(b=>b.time<=ft)||cs[0]);if(bar&&bar.time!=null)h.s.setMarkers([{time:bar.time,position:it.lado=='COMPRA'?'belowBar':'aboveBar',color:'#cbd5e1',shape:it.lado=='COMPRA'?'arrowUp':'arrowDown',text:'entrada'}]);else try{h.s.setMarkers([])}catch(e){}}
+   if(!h.sig||h.sig==='empty')h.chart.timeScale().fitContent();h.sig=sig}
+  const lv=[it.entry,it.sl,it.tp].join(',');
+  if(lv!==h.lv){h.lines.forEach(l=>h.s.removePriceLine(l));h.lines=[];h.levels=[it.entry,it.sl,it.tp].filter(x=>x!=null&&Number.isFinite(+x));
+   const add=(p,c,t,st)=>{if(p!=null&&Number.isFinite(+p))h.lines.push(h.s.createPriceLine({price:+p,color:c,lineWidth:2,lineStyle:st,axisLabelVisible:true,title:t}))};
+   add(it.entry,'#cbd5e1','Entrada',2);add(it.sl,'#ff3b3b','SL',0);add(it.tp,'#22c55e','TP',0);h.lv=lv;h.chart.priceScale('right').applyOptions({autoScale:true})}
+ }}
+function renderInteg(){const I=D.integrity||{};const b=document.getElementById('integ'),g=document.getElementById('integok');
+ if(I.ok===false){b.style.display='block';g.style.display='none';b.innerHTML='<b>⚠ incoherencia</b> entre base de datos, panel y avisos (comprobado '+esc(I.ts?hms(I.ts):'—')+'):<br>'+(I.issues||[]).slice(0,8).map(x=>'· '+esc(x)).join('<br>')+'<br>No te fíes de las cifras afectadas hasta que se resuelva.'}
+ else{b.style.display='none';g.style.display=I.ok?'block':'none';g.textContent=I.ok?('✓ Coherencia base ↔ panel ↔ avisos comprobada a las '+(I.ts?hms(I.ts):'—')+(I.blocked_signals_today?(' · señales bloqueadas hoy por integridad: '+I.blocked_signals_today):'')):''}}
+
+function lightName(k){return k=='rojo'?'rojo':k=='ambar'?'ámbar':k=='verde'?'verde':'—'}
+function posLine(p){const lado=p.lado||(p.dir>0?'COMPRA':p.dir<0?'VENTA':'');return `${esc(p.asset)}${lado?' '+esc(lado):''} ${eur(p.risk_eur,0)}`}
+function closedLine(p){return `${esc(p.asset)} ${esc(p.oc||'')} <span class="${cls(p.pnl_eur)}">${eur(p.pnl_eur,0,true)}</span>`}
+function riskRows(b,combined){
+  if(!b)return '<div class="empty">Sin datos</div>';
+  const fit=combined?`Caben ${b.n_fit_600??0} de 600 € o ${b.n_fit_300??0} de 300 € (si se miran juntas)`:`${(b.n_fit||0)===1?'Cabe 1 operación':'Caben '+(b.n_fit??0)+' operaciones'} de ${eur(b.risk_unit_eur,0)}`;
+  const st=b.blocked?`<span class="badge b-red">BLOQUEADO</span>`:(b.cap_reached?`<span class="badge b-warn">TOPE</span>`:`<span class="badge b-acc">HAY MARGEN</span>`);
+  const why=(b.reasons||[]).length?`<div class="riesgo-det">${(b.reasons).map(esc).join(' · ')}</div>`:'';
+  const opens=(b.open_positions||[]).length?`<div class="riesgo-det">Abiertas: ${b.open_positions.map(posLine).join(' · ')}</div>`:'';
+  const pends=(b.pending_positions||[]).length?`<div class="riesgo-det">Pendientes: ${b.pending_positions.map(posLine).join(' · ')}</div>`:'';
+  const clos=(b.closed_today||[]).length?`<div class="riesgo-det">Cerradas hoy: ${b.closed_today.map(closedLine).join(' · ')}</div>`:'';
+  return `<div class="riesgo-row"><span class="lab">P&L realizado hoy</span><span class="val ${cls(b.realized_pnl)}">${eur(b.realized_pnl,0,true)}</span></div>
+  <div class="riesgo-row"><span class="lab">Riesgo abierto (SL real)</span><span class="val">${eur(b.open_risk,0)}</span></div>
+  <div class="riesgo-row"><span class="lab">Riesgo pendiente</span><span class="val">${eur(b.pending_risk,0)}</span></div>
+  <div class="riesgo-row"><span class="lab">Pérdida comprometida</span><span class="val ${b.committed>0?'neg':''}">${eur(b.committed,0)}</span></div>
+  <div class="riesgo-row"><span class="lab">Margen guardia 1.800 €</span><span class="val ${b.room_guard<=0?'neg':''}">${eur(Math.max(0,b.room_guard),0)}</span></div>
+  <div class="riesgo-row"><span class="lab">Margen límite 2.000 €</span><span class="val ${b.room_daily<=0?'neg':''}">${eur(b.room_daily,0)}</span></div>
+  <div class="riesgo-row"><span class="lab">Margen pérdida total 4.000 €</span><span class="val">${eur(b.room_total,0)}</span></div>
+  <div class="riesgo-row"><span class="lab">Más operaciones</span><span class="val">${fit}</span></div>
+  <div style="margin-top:8px">${st}</div>${why}${opens}${pends}${clos}`}
+function renderRiesgo(){
+  const box=document.getElementById('riesgo');
+  const R=D&&D.riesgo;
+  if(!box)return;
+  if(!R||R.error){box.hidden=false;box.className='riesgo r-rojo';box.innerHTML=R&&R.error?`<div class="neg">No se pudo calcular el riesgo agregado: ${esc(R.error)}</div>`:'';if(!R)box.hidden=true;return}
+  const C=R.combinado||{},L=R.light||C.light||'verde';
+  box.hidden=false;box.className='riesgo r-'+L;
+  const pct=Math.max(0,C.used_pct||0);
+  const barCol=L=='rojo'?'var(--red)':L=='ambar'?'var(--warn)':'var(--acc)';
+  const title=R.date?R.date.split('-').reverse().join('/'):'hoy';
+  box.innerHTML=`<div class="riesgo-head"><div class="sema-light ${L}" title="Semáforo ${lightName(L)}" role="img" aria-label="Semáforo ${lightName(L)}"></div>
+    <div style="min-width:0;flex:1"><div class="k">Riesgo agregado de hoy · ${esc(title)} (Europe/Madrid)</div>
+    <div class="v" style="font-size:18px">Pérdida comprometida combinada: <span class="${C.committed>0?'neg':''}">${eur(C.committed,0)}</span> · ${nf(pct,1)} % de 1.800 €</div>
+    <div class="s">Semáforo ${lightName(L)} (verde &lt; 50 %, ámbar 50–90 %, rojo ≥ 90 % o tope alcanzado). Incluye flotante solo en el margen de 2.000 / 4.000 €, como el motor.</div>
+    ${bar(Math.min(100,pct),barCol)}</div></div>
+  <div class="riesgo-grid">
+    <div class="riesgo-col"><h3>ORB · 600 €/op <span class="badge ${R.orb&&R.orb.light=='rojo'?'b-red':R.orb&&R.orb.light=='ambar'?'b-warn':'b-acc'}">${esc(lightName(R.orb&&R.orb.light))}</span></h3>${riskRows(R.orb,false)}</div>
+    <div class="riesgo-col"><h3>Escáner · 300 €/op <span class="badge ${R.escaner&&R.escaner.light=='rojo'?'b-red':R.escaner&&R.escaner.light=='ambar'?'b-warn':'b-acc'}">${esc(lightName(R.escaner&&R.escaner.light))}</span></h3>${riskRows(R.escaner,false)}</div>
+    <div class="riesgo-col"><h3>Combinado <span class="badge ${L=='rojo'?'b-red':L=='ambar'?'b-warn':'b-acc'}">${esc(lightName(L))}</span></h3>${riskRows(C,true)}</div>
+  </div>
+  <div class="note">${esc(C.note||'')}</div>`;
+}
+let fails=0;async function load(){try{const r=await fetch(DATA_URL(),{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);D=await r.json();fails=0;
+ document.getElementById('upd').textContent=D.generated_hms+(LOCAL?'':' · hace '+Math.max(0,Math.round((Date.now()-new Date(D.generated))/1000))+' s');document.getElementById('dot').classList.remove('off');document.getElementById('err').style.display='none';renderInteg();renderRiesgo();render();try{renderCharts()}catch(e){console.error(e);document.getElementById('tcnote').textContent='Error del gráfico: '+e.message}}
+ catch(e){fails++;document.getElementById('dot').classList.add('off');if(fails>1){const el=document.getElementById('err');el.style.display='block';el.textContent='Sin conexión con el servidor ('+e.message+'). Reintentando cada 5 s… Los datos mostrados pueden estar desfasados.'}}}
+load();setInterval(load,5000);
+</script></body></html>
